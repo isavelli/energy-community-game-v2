@@ -668,6 +668,10 @@ const EnergyGamev2 = () => {
                 <p className="text-gray-600 font-bold">Cash Balance</p>
                 <p className={`text-2xl font-bold ${money >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{money.toFixed(2)}</p>
               </div>
+			  <div>
+                <p className="text-gray-600 font-bold">Cash Alone</p>
+                <p className={`text-2xl font-bold ${moneyAlone >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{moneyAlone.toFixed(2)}</p>
+              </div>
             </div>
           </div>
         </div>
