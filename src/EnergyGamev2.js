@@ -1300,7 +1300,7 @@ const EnergyGamev2 = () => {
   <div className="grid grid-cols-2 gap-4 mt-3">
     <div className="flex flex-col">
       <label htmlFor="buyPrice" className="text-sm font-medium text-gray-700 mb-1">
-        Buy Price (€/kWh)
+        Buy (Import) Price (€/kWh)
       </label>
       <div className="relative mt-1 rounded-md shadow-sm">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -1313,7 +1313,13 @@ const EnergyGamev2 = () => {
           step="0.01"
           max="2"
           value={buyPrice}
-          onChange={(e) => setBuyPrice(Number(e.target.value))}
+		  
+		  onChange={(e) => {
+			  const newBuyPrice = Number(e.target.value);
+			  // Ensure buy price is not less than sell price
+			  setBuyPrice(Math.max(newBuyPrice, sellPrice));
+			}}
+		  
           className="block w-full rounded-md border-gray-300 pl-7 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           placeholder="0.00"
           disabled={gameRunning}
@@ -1327,7 +1333,7 @@ const EnergyGamev2 = () => {
     
     <div className="flex flex-col">
       <label htmlFor="sellPrice" className="text-sm font-medium text-gray-700 mb-1">
-        Sell Price (€/kWh)
+        Sell (Export) Price (€/kWh)
       </label>
       <div className="relative mt-1 rounded-md shadow-sm">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -1340,7 +1346,11 @@ const EnergyGamev2 = () => {
           step="0.01"
           max="2"
           value={sellPrice}
-          onChange={(e) => setSellPrice(Number(e.target.value))}
+          onChange={(e) => {
+			  const newSellPrice = Number(e.target.value);
+			  // Ensure sell price is not greater than buy price
+			  setSellPrice(Math.min(newSellPrice, buyPrice));
+			}}
           className="block w-full rounded-md border-gray-300 pl-7 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           placeholder="0.00"
           disabled={gameRunning}
@@ -1353,8 +1363,8 @@ const EnergyGamev2 = () => {
     </div>
   </div>
   
-  <div className="mt-2 text-sm text-gray-600 italic">
-    Note: Prices cannot be changed while the simulation is running
+  <div className="mt-4 text-sm text-gray-600 italic">
+	  Note: Prices cannot be changed while the simulation is running. Buy price must always be greater than or equal to sell price.
   </div>
   <br />
 
