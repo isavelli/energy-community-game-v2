@@ -752,6 +752,11 @@ const EnergyGamev2 = () => {
       <div className="flex flex-row space-x-4">
         {/* Left Column - Energy Sources */}
         <div className="flex flex-col space-y-8 w-1/4">
+			
+		<div className="border border-gray-300 rounded-lg p-3 mb-3 bg-gray-50">
+        <h2 className="text-xl font-bold text-center mb-4">Generators</h2>
+		
+		<div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-blue-300 mb-4">
         {/* Wind Farm Section */}
         <div className="text-center">
           {/* Wind Production Forecast Chart */}
@@ -784,10 +789,13 @@ const EnergyGamev2 = () => {
           <p>Wind Speed: {getCurrentWindSpeed()} m/s</p>	  
 		  <p>Energy: <span className="font-bold">{windFarmCount !== 0 ? (windEnergyProduced/windFarmCount).toFixed(1) + " kW" : "not selected"}</span></p>
         </div>
+		</div>
+		
 
 
 
     {/* Solar Panel Section */}
+	<div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-yellow-300">
     <div className="text-center">
     {/* Solar Production Forecast Chart */}
     <div className="h-32 w-full mb-2">
@@ -936,6 +944,8 @@ const EnergyGamev2 = () => {
     </p>
     </div>
     </div>
+	</div>
+	</div>
 
 
 
@@ -1145,11 +1155,12 @@ const EnergyGamev2 = () => {
 
 {/* Right Column - Home Section with 2x2 layout */}
 <div className="w-1/2">
-<h2 className="text-xl font-bold text-center mb-4">Energy Community Members</h2>
+<div className="bg-white rounded-lg p-4 shadow-md">
+<h2 className="text-xl font-bold text-center mb-4">Consumers</h2>
 <div className="grid grid-cols-2 gap-6">
     
       {/* Home 1 - Work From Home */}
-      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md">
+      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-blue-300">
       <div className="h-32 w-full mb-2">
         <ResponsiveContainer width="100%" height="100%">
         <LineChart data={getHome1Forecast()}>
@@ -1180,7 +1191,7 @@ const EnergyGamev2 = () => {
       </div>
 
       {/* Home 2 - Office Worker */}
-      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md">
+      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-yellow-300">
       <div className="h-32 w-full mb-2">
         <ResponsiveContainer width="100%" height="100%">
         <LineChart data={getHome2Forecast()}>
@@ -1208,7 +1219,7 @@ const EnergyGamev2 = () => {
       </div>
 
       {/* Home 3 - Family with Children */}
-      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md">
+      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-green-300">
       <div className="h-32 w-full mb-2">
         <ResponsiveContainer width="100%" height="100%">
         <LineChart data={getHome3Forecast()}>
@@ -1236,7 +1247,7 @@ const EnergyGamev2 = () => {
       </div>
 
       {/* Business Building */}
-      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md">
+      <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-purple-300">
       <div className="h-32 w-full mb-2">
         <ResponsiveContainer width="100%" height="100%">
         <LineChart data={getBusinessForecast()}>
@@ -1264,6 +1275,7 @@ const EnergyGamev2 = () => {
       </div>
     </div>
     </div>
+  </div>
   </div>
 
 
