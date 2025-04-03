@@ -1102,7 +1102,7 @@ const EnergyGamev2 = () => {
   
 {/* Wind Farm Controls */}
   <div className="flex items-center justify-between mb-2 p-2 bg-blue-50 rounded">
-    <span className="text-sm text-blue-700 font-semibold">Wind Farms:</span>
+    <span className="text-sm text-blue-700 font-semibold">Wind Turbines:</span>
     <div className="flex items-center">
       <button 
         className="w-8 h-8 bg-blue-500 text-white rounded-l flex items-center justify-center hover:bg-blue-600"
@@ -1124,7 +1124,7 @@ const EnergyGamev2 = () => {
   
   {/* Solar Panel Controls */}
   <div className="flex items-center justify-between mb-2 p-2 bg-yellow-50 rounded">
-    <span className="text-sm text-yellow-700 font-semibold">Photovoltaic panels:</span>
+    <span className="text-sm text-yellow-700 font-semibold">Photovoltaic Panels:</span>
     <div className="flex items-center">
       <button 
         className="w-8 h-8 bg-yellow-500 text-white rounded-l flex items-center justify-center hover:bg-yellow-600"
@@ -1289,7 +1289,7 @@ const EnergyGamev2 = () => {
     <li><span className="font-semibold">Home 2:</span> House of a worker with morning/evening peaks and low daytime usage</li>
     <li><span className="font-semibold">Home 3:</span> Family with children pattern showing higher overall consumption</li>
     <li><span className="font-semibold">Business:</span> Daytime-only usage on weekdays, reduced weekend operation</li>
-    <li><span className="font-semibold">Wind farm:</span> Wind farm with intermittent generation through the day</li>
+    <li><span className="font-semibold">Wind turbine:</span> Wind farm with intermittent generation through the day</li>
     <li><span className="font-semibold">Photovoltaic panel:</span> Photovoltaic panel with intermittent generation during daylight</li>
   </ul>
 </div> 
