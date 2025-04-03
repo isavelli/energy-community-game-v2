@@ -235,40 +235,34 @@ const EnergyGamev2 = () => {
     return totalEnergyConsumed;
   }, [totalEnergyConsumed]);
 
-// In the useEffect for initial setup, add after setting consumption values:
-useEffect(() => {
-  const initialWindProduction = calculateWindProduction(0, windFarmCount);
-  const initialSolarProduction = calculateSolarProduction(0, solarPanelCount);
-  
-  const initialHome1Consumption = calculateHome1Consumption(0);
-  const initialHome2Consumption = calculateHome2Consumption(0);
-  const initialHome3Consumption = calculateHome3Consumption(0);
-  const initialBusinessConsumption = calculateBusinessConsumption(0);
-  const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
-                                initialHome3Consumption + initialBusinessConsumption;
-  
-  setWindEnergyProduced(initialWindProduction);
-  setSolarEnergyProduced(initialSolarProduction);
-  const initialTotalProduction = initialWindProduction + initialSolarProduction;
-  setTotalEnergyProduced(initialTotalProduction);
-  
-  setHome1EnergyConsumed(initialHome1Consumption);
-  setHome2EnergyConsumed(initialHome2Consumption);
-  setHome3EnergyConsumed(initialHome3Consumption);
-  setBusinessEnergyConsumed(initialBusinessConsumption);
-  setTotalEnergyConsumed(initialTotalConsumption);
-  
-  // Calculate initial grid interaction and money
-  const initialGridInteraction = initialTotalConsumption - initialTotalProduction;
-  const initialFinancialImpact = initialGridInteraction > 0 
-    ? -initialGridInteraction * buyPrice 
-    : -initialGridInteraction * sellPrice;
-  
-  setMoney(initialFinancialImpact);
-  setCashBalanceHistory([initialFinancialImpact]);
-}, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
-    calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption, 
-    windFarmCount, solarPanelCount, buyPrice, sellPrice]);
+  // Initialize energy production and consumption on component mount
+  useEffect(() => {
+    const initialWindProduction = calculateWindProduction(0, windFarmCount);
+    const initialSolarProduction = calculateSolarProduction(0, solarPanelCount);
+    const initialTotalProduction = initialWindProduction + initialSolarProduction;
+    
+    const initialHome1Consumption = calculateHome1Consumption(0);
+    const initialHome2Consumption = calculateHome2Consumption(0);
+    const initialHome3Consumption = calculateHome3Consumption(0);
+    const initialBusinessConsumption = calculateBusinessConsumption(0);
+    const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
+                                    initialHome3Consumption + initialBusinessConsumption;
+    
+    // Initialize production and consumption values without affecting money
+    setWindEnergyProduced(initialWindProduction);
+    setSolarEnergyProduced(initialSolarProduction);
+    setTotalEnergyProduced(initialTotalProduction);
+    
+    setHome1EnergyConsumed(initialHome1Consumption);
+    setHome2EnergyConsumed(initialHome2Consumption);
+    setHome3EnergyConsumed(initialHome3Consumption);
+    setBusinessEnergyConsumed(initialBusinessConsumption);
+    setTotalEnergyConsumed(initialTotalConsumption);
+    
+    // Money will be calculated in the game loop when started
+  }, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
+      calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption, 
+      windFarmCount, solarPanelCount]);
 
   // Format time to display - memoized to avoid recreation on each render
   const formatHour = useCallback((hour) => {
@@ -406,68 +400,65 @@ useEffect(() => {
     return forecast;
   }, [currentHour, weekData.businessConsumption]);
 
-
-const resetGame = useCallback(() => {
-  // Stop the game if it's running
-  setGameRunning(false);
-  
-  // Reset asset counts
-  setWindFarmCount(0);
-  setSolarPanelCount(0);
-  setHome1Count(0);
-  setHome2Count(0);
-  setHome3Count(0);
-  setBusinessCount(0);
-  
-  setShowDebug(false); // Uncheck debug checkbox
-  
-  // Reset all state variables to initial values
-  setCurrentHour(0);
-  setDayCount(1);
-  setGameSpeed(1);
-  setHourStarted(false);
-  
-  // Calculate initial production values
-  const initialWindProduction = calculateWindProduction(0, 0);
-  const initialSolarProduction = calculateSolarProduction(0, 0);
-  const initialTotalProduction = initialWindProduction + initialSolarProduction;
-  
-  // Calculate initial consumption values
-  const initialHome1Consumption = calculateHome1Consumption(0);
-  const initialHome2Consumption = calculateHome2Consumption(0);
-  const initialHome3Consumption = calculateHome3Consumption(0);
-  const initialBusinessConsumption = calculateBusinessConsumption(0);
-  const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
-                                initialHome3Consumption + initialBusinessConsumption;
-  
-  // Calculate initial grid interaction and money
-  const initialGridInteraction = initialTotalConsumption - initialTotalProduction;
-  const initialFinancialImpact = initialGridInteraction > 0 
-    ? -initialGridInteraction * buyPrice 
-    : -initialGridInteraction * sellPrice;
-  
-  setMoney(initialFinancialImpact);
-  setCashBalanceHistory([initialFinancialImpact]);
-  
-  // Set initial energy production values
-  setWindEnergyProduced(initialWindProduction);
-  setSolarEnergyProduced(initialSolarProduction);
-  setTotalEnergyProduced(initialTotalProduction);
-  
-  // Set initial consumption values
-  setHome1EnergyConsumed(initialHome1Consumption);
-  setHome2EnergyConsumed(initialHome2Consumption);
-  setHome3EnergyConsumed(initialHome3Consumption);
-  setBusinessEnergyConsumed(initialBusinessConsumption);
-  setTotalEnergyConsumed(initialTotalConsumption);
-  
-  // Reset time accumulators and refs
-  timeAccumulatorRef.current = 0;
-  lastDayTransitionRef.current = null;
-}, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
-    calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption,
-    buyPrice, sellPrice]);
+// Reset game function
+  const resetGame = useCallback(() => {
+    // Stop the game if it's running
+    setGameRunning(false);
+    
+    // Reset all state variables to initial values
+    setCurrentHour(0);
+    setMoney(0);
+    setCashBalanceHistory([0]); // Reset cash balance history with initial value
+    setDayCount(1);
+    setGameSpeed(1);
+    setHourStarted(false);
 	
+	setMaxWindPower(10); // kW per wind farm
+    setMaxSolarPower(10); // kW per solar panel
+    
+    // Reset asset counts
+    setWindFarmCount(0);
+    setSolarPanelCount(0);
+    setHome1Count(0);
+    setHome2Count(0);
+    setHome3Count(0);
+    setBusinessCount(0);
+	
+	// Reset prices to initial values
+	setBuyPrice(0.30);  // Reset to default buy price (€0.30/kWh)
+	setSellPrice(0.10); // Reset to default sell price (€0.10/kWh)
+    
+    setShowDebug(false); // Uncheck debug checkbox
+    
+    // Calculate initial production values (with zero assets)
+    const initialWindProduction = calculateWindProduction(0, 0);
+    const initialSolarProduction = calculateSolarProduction(0, 0);
+    
+    // Calculate initial consumption values (with zero assets)
+    const initialHome1Consumption = calculateHome1Consumption(0);
+    const initialHome2Consumption = calculateHome2Consumption(0);
+    const initialHome3Consumption = calculateHome3Consumption(0);
+    const initialBusinessConsumption = calculateBusinessConsumption(0);
+    const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
+                                  initialHome3Consumption + initialBusinessConsumption;
+    
+    // Set initial energy production values
+    setWindEnergyProduced(initialWindProduction);
+    setSolarEnergyProduced(initialSolarProduction);
+    setTotalEnergyProduced(initialWindProduction + initialSolarProduction);
+    
+    // Set initial consumption values
+    setHome1EnergyConsumed(initialHome1Consumption);
+    setHome2EnergyConsumed(initialHome2Consumption);
+    setHome3EnergyConsumed(initialHome3Consumption);
+    setBusinessEnergyConsumed(initialBusinessConsumption);
+    setTotalEnergyConsumed(initialTotalConsumption);
+    
+    // Reset time accumulators and refs
+    timeAccumulatorRef.current = 0;
+    lastDayTransitionRef.current = null;
+  }, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
+      calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption]);
 
   // Track values for the current hour and animation
   const [hourStarted, setHourStarted] = useState(false);
@@ -553,21 +544,35 @@ const resetGame = useCallback(() => {
         // Calculate total energy production
         const totalProduction = windProduction + solarProduction;
         
-        // Update money immediately based on grid interaction and prices
+        // Calculate grid interaction (grid imbalance)
         const gridInteraction = totalConsumption - totalProduction;
-        const financialImpact = gridInteraction > 0 
-          ? -gridInteraction * buyPrice 
-          : -gridInteraction * sellPrice;
         
-        setMoney(prevMoney => {
-          const newMoney = prevMoney + financialImpact;
-          return newMoney;
+        // Calculate financial impact based on grid interaction
+        const financialImpact = gridInteraction > 0 
+          ? -gridInteraction * buyPrice  // Buying energy (cost)
+          : -gridInteraction * sellPrice; // Selling energy (revenue)
+        
+        // Get the current balance from history to ensure we're building on the correct value
+        const currentBalance = cashBalanceHistory.length > 0 ? 
+          cashBalanceHistory[cashBalanceHistory.length - 1] : 0;
+        
+        // Calculate the new balance for this hour
+        const newBalance = currentBalance + financialImpact;
+        
+        // Update money state
+        setMoney(newBalance);
+        
+        // Update cash balance history
+        setCashBalanceHistory(prevHistory => {
+          const newHistory = [...prevHistory];
+          newHistory[currentHour] = newBalance;
+          return newHistory;
         });
         
         // Mark that we've calculated values for this hour
         setHourStarted(true);
         
-        // Update all state values at the beginning of the hour
+        // Update all energy state values
         setWindEnergyProduced(windProduction);
         setSolarEnergyProduced(solarProduction);
         setTotalEnergyProduced(totalProduction);
@@ -578,6 +583,18 @@ const resetGame = useCallback(() => {
         setHome3EnergyConsumed(home3Consumption);
         setBusinessEnergyConsumed(businessConsumption);
         setTotalEnergyConsumed(totalConsumption);
+        
+        // For debugging - log the current hour's financial details
+        if (showDebug) {
+          console.log(`Hour ${currentHour} financial details:`, {
+            gridInteraction: gridInteraction.toFixed(2),
+            financialImpact: financialImpact.toFixed(2),
+            solarProduction: solarProduction.toFixed(2),
+            windProduction: windProduction.toFixed(2),
+            totalConsumption: totalConsumption.toFixed(2),
+            newBalance: newBalance.toFixed(2)
+          });
+        }
       }
       
       // Accumulate time for hour changes using ref for better performance
@@ -585,57 +602,40 @@ const resetGame = useCallback(() => {
       
       // If we've accumulated 1 second or more, update the hour
       if (timeAccumulatorRef.current >= 1) {
-        
-		
-		// Reset accumulator and update hour
-		setCurrentHour(prevHour => {
-		  const nextHour = prevHour + 1;
-		  
-		  if (nextHour >= weekData.windSpeed.length) {
-			// End of week, stop the game
-			setGameRunning(false);
-			
-			return prevHour;
-		  }
-		  
-		  // Check for new day here using nextHour
-		  // Then modify the day increment code
-		  if (nextHour % 24 === 0 && lastDayTransitionRef.current !== nextHour) {
-			  lastDayTransitionRef.current = nextHour;
-			  setDayCount((prevDay) => prevDay + 1);
-		  }
-		  
-		  // Record the cash balance for the current hour (prevHour)
-		  setCashBalanceHistory(prevHistory => {
-			// Make a copy of the previous history
-			const newHistory = [...prevHistory];
-			// Ensure we have the right number of entries (should match nextHour)
-			while (newHistory.length <= nextHour && nextHour < weekData.windSpeed.length) {
-			  newHistory.push(money);
-			}
-			return newHistory;
-		  });
-		  
-		  // Reset the hourStarted flag to recalculate values for the new hour
-		  setHourStarted(false);
-		  
-		  return nextHour;
-		});
+        // Reset accumulator and update hour
+        setCurrentHour(prevHour => {
+          const nextHour = prevHour + 1;
+          
+          if (nextHour >= weekData.windSpeed.length) {
+            // End of week, stop the game
+            setGameRunning(false);
+            return prevHour;
+          }
+          
+          // Check for new day here using nextHour
+          if (nextHour % 24 === 0 && lastDayTransitionRef.current !== nextHour) {
+            lastDayTransitionRef.current = nextHour;
+            setDayCount((prevDay) => prevDay + 1);
+          }
+          
+          // Reset the hourStarted flag to recalculate values for the new hour
+          setHourStarted(false);
+          
+          return nextHour;
+        });
 
-		// Reset the accumulator
-		timeAccumulatorRef.current = 0;
-		
-		
+        // Reset the accumulator
+        timeAccumulatorRef.current = 0;
       }
       
     }, 10); // Render loop runs every 0.01 seconds (100 FPS)
     
     return () => clearInterval(renderLoop);
-  }, [gameRunning, buyPrice, sellPrice, currentHour, money,
-      weekData, hourStarted, gameSpeed,
-      windFarmCount, solarPanelCount, calculateWindProduction, calculateSolarProduction,
-      calculateHome1Consumption, calculateHome2Consumption, calculateHome3Consumption, 
-      calculateBusinessConsumption]);
+  }, [gameRunning, buyPrice, sellPrice, currentHour, cashBalanceHistory,
+    weekData, hourStarted, gameSpeed, showDebug,
+    windFarmCount, solarPanelCount, calculateWindProduction, calculateSolarProduction,
+    calculateHome1Consumption, calculateHome2Consumption, calculateHome3Consumption, 
+    calculateBusinessConsumption]);
 
   return (
     <div className="w-full h-full p-4 rounded-lg bg-blue-100 text-gray-800">   
@@ -1026,7 +1026,7 @@ const resetGame = useCallback(() => {
         </div>
       </div>
       
-      {/* Business Controls */}
+{/* Business Controls */}
       <div className="flex items-center justify-between mb-2 p-2 bg-purple-50 rounded">
         <span className="text-sm text-purple-700 font-semibold">Businesses:</span>
         <div className="flex items-center">
@@ -1055,7 +1055,7 @@ const resetGame = useCallback(() => {
   {/* Generators Label */}
   <h5 className="text-lg font-semibold mb-2 text-left border-b pb-1">Generators</h5>
   
-  {/* Wind Farm Controls */}
+{/* Wind Farm Controls */}
   <div className="flex items-center justify-between mb-2 p-2 bg-blue-50 rounded">
     <span className="text-sm text-blue-700 font-semibold">Wind Farms:</span>
     <div className="flex items-center">
