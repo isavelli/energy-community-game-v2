@@ -1,9 +1,9 @@
-import EnergyGameSimplified from './EnergyGameSimplified';
+import EnergyGamev2 from './EnergyGamev2';
 
 function App() {
   return (
     <div className="App">
-      <EnergyGameSimplified />
+      <EnergyGamev2 />
     </div>
   );
 }

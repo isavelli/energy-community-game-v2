@@ -3,7 +3,7 @@ import { Wind, Home, Sun, Cloud, Store} from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 
-const EnergyGameSimplified = () => {
+const EnergyGamev2 = () => {
   // Week-long simulation data (24 hours * 7 days = 168 hours)
   const weekData = useMemo(() => ({
     // Wind speed in m/s for each hour of the week
@@ -1512,4 +1512,4 @@ const EnergyGameSimplified = () => {
 );
 };
 
-export default EnergyGameSimplified;
+export default EnergyGamev2;
