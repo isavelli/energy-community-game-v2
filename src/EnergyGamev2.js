@@ -235,30 +235,40 @@ const EnergyGamev2 = () => {
     return totalEnergyConsumed;
   }, [totalEnergyConsumed]);
 
-  // Initialize energy production and consumption on component mount
-  useEffect(() => {
-    const initialWindProduction = calculateWindProduction(0, windFarmCount);
-    const initialSolarProduction = calculateSolarProduction(0, solarPanelCount);
-    
-    const initialHome1Consumption = calculateHome1Consumption(0);
-    const initialHome2Consumption = calculateHome2Consumption(0);
-    const initialHome3Consumption = calculateHome3Consumption(0);
-    const initialBusinessConsumption = calculateBusinessConsumption(0);
-    const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
-                                    initialHome3Consumption + initialBusinessConsumption;
-    
-    setWindEnergyProduced(initialWindProduction);
-    setSolarEnergyProduced(initialSolarProduction);
-    setTotalEnergyProduced(initialWindProduction + initialSolarProduction);
-    
-    setHome1EnergyConsumed(initialHome1Consumption);
-    setHome2EnergyConsumed(initialHome2Consumption);
-    setHome3EnergyConsumed(initialHome3Consumption);
-    setBusinessEnergyConsumed(initialBusinessConsumption);
-    setTotalEnergyConsumed(initialTotalConsumption);
-  }, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
-      calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption, 
-      windFarmCount, solarPanelCount]);
+// In the useEffect for initial setup, add after setting consumption values:
+useEffect(() => {
+  const initialWindProduction = calculateWindProduction(0, windFarmCount);
+  const initialSolarProduction = calculateSolarProduction(0, solarPanelCount);
+  
+  const initialHome1Consumption = calculateHome1Consumption(0);
+  const initialHome2Consumption = calculateHome2Consumption(0);
+  const initialHome3Consumption = calculateHome3Consumption(0);
+  const initialBusinessConsumption = calculateBusinessConsumption(0);
+  const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
+                                initialHome3Consumption + initialBusinessConsumption;
+  
+  setWindEnergyProduced(initialWindProduction);
+  setSolarEnergyProduced(initialSolarProduction);
+  const initialTotalProduction = initialWindProduction + initialSolarProduction;
+  setTotalEnergyProduced(initialTotalProduction);
+  
+  setHome1EnergyConsumed(initialHome1Consumption);
+  setHome2EnergyConsumed(initialHome2Consumption);
+  setHome3EnergyConsumed(initialHome3Consumption);
+  setBusinessEnergyConsumed(initialBusinessConsumption);
+  setTotalEnergyConsumed(initialTotalConsumption);
+  
+  // Calculate initial grid interaction and money
+  const initialGridInteraction = initialTotalConsumption - initialTotalProduction;
+  const initialFinancialImpact = initialGridInteraction > 0 
+    ? -initialGridInteraction * buyPrice 
+    : -initialGridInteraction * sellPrice;
+  
+  setMoney(initialFinancialImpact);
+  setCashBalanceHistory([initialFinancialImpact]);
+}, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
+    calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption, 
+    windFarmCount, solarPanelCount, buyPrice, sellPrice]);
 
   // Format time to display - memoized to avoid recreation on each render
   const formatHour = useCallback((hour) => {
@@ -396,60 +406,68 @@ const EnergyGamev2 = () => {
     return forecast;
   }, [currentHour, weekData.businessConsumption]);
 
-  // Reset game function
-  const resetGame = useCallback(() => {
-    // Stop the game if it's running
-    setGameRunning(false);
-    
-    // Reset all state variables to initial values
-    setCurrentHour(0);
-    setMoney(0);
-    setCashBalanceHistory([0]); // Reset cash balance history with initial value
-    setDayCount(1);
-    setGameSpeed(1);
-    setHourStarted(false);
-    
-    // Reset asset counts
-    setWindFarmCount(0);
-    setSolarPanelCount(0);
-    setHome1Count(0);
-    setHome2Count(0);
-    setHome3Count(0);
-    setBusinessCount(0);
+
+const resetGame = useCallback(() => {
+  // Stop the game if it's running
+  setGameRunning(false);
+  
+  // Reset asset counts
+  setWindFarmCount(0);
+  setSolarPanelCount(0);
+  setHome1Count(0);
+  setHome2Count(0);
+  setHome3Count(0);
+  setBusinessCount(0);
+  
+  setShowDebug(false); // Uncheck debug checkbox
+  
+  // Reset all state variables to initial values
+  setCurrentHour(0);
+  setDayCount(1);
+  setGameSpeed(1);
+  setHourStarted(false);
+  
+  // Calculate initial production values
+  const initialWindProduction = calculateWindProduction(0, 0);
+  const initialSolarProduction = calculateSolarProduction(0, 0);
+  const initialTotalProduction = initialWindProduction + initialSolarProduction;
+  
+  // Calculate initial consumption values
+  const initialHome1Consumption = calculateHome1Consumption(0);
+  const initialHome2Consumption = calculateHome2Consumption(0);
+  const initialHome3Consumption = calculateHome3Consumption(0);
+  const initialBusinessConsumption = calculateBusinessConsumption(0);
+  const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
+                                initialHome3Consumption + initialBusinessConsumption;
+  
+  // Calculate initial grid interaction and money
+  const initialGridInteraction = initialTotalConsumption - initialTotalProduction;
+  const initialFinancialImpact = initialGridInteraction > 0 
+    ? -initialGridInteraction * buyPrice 
+    : -initialGridInteraction * sellPrice;
+  
+  setMoney(initialFinancialImpact);
+  setCashBalanceHistory([initialFinancialImpact]);
+  
+  // Set initial energy production values
+  setWindEnergyProduced(initialWindProduction);
+  setSolarEnergyProduced(initialSolarProduction);
+  setTotalEnergyProduced(initialTotalProduction);
+  
+  // Set initial consumption values
+  setHome1EnergyConsumed(initialHome1Consumption);
+  setHome2EnergyConsumed(initialHome2Consumption);
+  setHome3EnergyConsumed(initialHome3Consumption);
+  setBusinessEnergyConsumed(initialBusinessConsumption);
+  setTotalEnergyConsumed(initialTotalConsumption);
+  
+  // Reset time accumulators and refs
+  timeAccumulatorRef.current = 0;
+  lastDayTransitionRef.current = null;
+}, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
+    calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption,
+    buyPrice, sellPrice]);
 	
-	setShowDebug(false); // Uncheck debug checkbox
-    
-    // Keep the current prices (don't reset them)
-    
-    // Calculate initial production values
-    const initialWindProduction = calculateWindProduction(0, 0);
-    const initialSolarProduction = calculateSolarProduction(0, 0);
-    
-    // Calculate initial consumption values
-    const initialHome1Consumption = calculateHome1Consumption(0);
-    const initialHome2Consumption = calculateHome2Consumption(0);
-    const initialHome3Consumption = calculateHome3Consumption(0);
-    const initialBusinessConsumption = calculateBusinessConsumption(0);
-    const initialTotalConsumption = initialHome1Consumption + initialHome2Consumption + 
-                                    initialHome3Consumption + initialBusinessConsumption;
-    
-    // Set initial energy production values
-    setWindEnergyProduced(initialWindProduction);
-    setSolarEnergyProduced(initialSolarProduction);
-    setTotalEnergyProduced(initialWindProduction + initialSolarProduction);
-    
-    // Set initial consumption values
-    setHome1EnergyConsumed(initialHome1Consumption);
-    setHome2EnergyConsumed(initialHome2Consumption);
-    setHome3EnergyConsumed(initialHome3Consumption);
-    setBusinessEnergyConsumed(initialBusinessConsumption);
-    setTotalEnergyConsumed(initialTotalConsumption);
-    
-    // Reset time accumulators and refs
-    timeAccumulatorRef.current = 0;
-    lastDayTransitionRef.current = null;
-  }, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
-      calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption]);
 
   // Track values for the current hour and animation
   const [hourStarted, setHourStarted] = useState(false);
