@@ -127,8 +127,18 @@ const EnergyGamev2 = () => {
   const [currentHour, setCurrentHour] = useState(0);
   const [money, setMoney] = useState(0); // Start with 0 euros
   const [moneyAlone, setMoneyAlone] = useState(0); // Money if each consumer/generator acted alone
+  const [generationStandalone, setGenerationStandalone] = useState(0); // Revenue from generation valued at selling price
+  const [consumptionStandalone, setConsumptionStandalone] = useState(0); // Cost of consumption valued at buying price (negative)
+  const [communityPrice, setCommunityPrice] = useState(0.20); // Average of buy and sell prices
+  const [generationCommunity, setGenerationCommunity] = useState(0); // Generation with community pricing
+  const [consumptionCommunity, setConsumptionCommunity] = useState(0); // Consumption with community pricing
   const [cashBalanceHistory, setCashBalanceHistory] = useState([0]); // Track cash balance history
   const [cashAloneHistory, setCashAloneHistory] = useState([0]); // Track cash balance history for standalone scenario
+  const [generationHistory, setGenerationHistory] = useState([0]); // Track standalone generation revenue
+  const [consumptionHistory, setConsumptionHistory] = useState([0]); // Track standalone consumption cost
+  const [communityPriceHistory, setCommunityPriceHistory] = useState([0.20]); // Track community price history
+  const [generationCommunityHistory, setGenerationCommunityHistory] = useState([0]); // Track community generation history
+  const [consumptionCommunityHistory, setConsumptionCommunityHistory] = useState([0]); // Track community consumption history
   const [gameRunning, setGameRunning] = useState(false);
   const [dayCount, setDayCount] = useState(1);
   const [buyPrice, setBuyPrice] = useState(0.30); // euros per kWh
@@ -378,7 +388,7 @@ const EnergyGamev2 = () => {
     return forecast;
   }, [currentHour, weekData.home2Consumption]);
 
-  const getHome3Forecast = useCallback(() => {
+const getHome3Forecast = useCallback(() => {
     const forecast = [];
     for (let i = 0; i < 24; i++) {
       const hour = (currentHour + i) % weekData.home3Consumption.length;
@@ -427,11 +437,22 @@ const EnergyGamev2 = () => {
     setBusinessCount(0);
 	
 	setMoneyAlone(0);
+    setGenerationStandalone(0);
+    setConsumptionStandalone(0);
+    setGenerationCommunity(0);
+    setConsumptionCommunity(0);
+    setCommunityPrice((buyPrice + sellPrice) / 2); // Initialize community price
     setCashAloneHistory([0]); // Reset standalone cash balance history
+    setGenerationHistory([0]); // Reset standalone generation revenue history
+    setConsumptionHistory([0]); // Reset standalone consumption cost history
+    setCommunityPriceHistory([(buyPrice + sellPrice) / 2]); // Reset community price history
+    setGenerationCommunityHistory([0]); // Reset community generation history
+    setConsumptionCommunityHistory([0]); // Reset community consumption history
 	
 	// Reset prices to initial values
 	setBuyPrice(0.30);  // Reset to default buy price (€0.30/kWh)
 	setSellPrice(0.10); // Reset to default sell price (€0.10/kWh)
+	setCommunityPrice(0.20); // Reset community price
     
     setShowDebug(false); // Uncheck debug checkbox
     
@@ -463,7 +484,7 @@ const EnergyGamev2 = () => {
     timeAccumulatorRef.current = 0;
     lastDayTransitionRef.current = null;
   }, [calculateWindProduction, calculateSolarProduction, calculateHome1Consumption, 
-      calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption]);
+      calculateHome2Consumption, calculateHome3Consumption, calculateBusinessConsumption, buyPrice, sellPrice]);
 
   // Track values for the current hour and animation
   const [hourStarted, setHourStarted] = useState(false);
@@ -559,23 +580,65 @@ const EnergyGamev2 = () => {
         
         // Calculate financial impact for standalone scenario (no community benefit)
 		// All consumption is billed at buy price, all generation compensated at sell price
-		const standaloneCost = -totalConsumption * buyPrice; // Cost for all consumption
-		const standaloneRevenue = totalProduction * sellPrice; // Revenue for all generation
+		const standaloneCost = -totalConsumption * buyPrice; // Cost for all consumption (negative value)
+		const standaloneRevenue = totalProduction * sellPrice; // Revenue for all generation (positive value)
 		const standaloneFinancialImpact = standaloneCost + standaloneRevenue;
+		
+		// Calculate community price (average of buy and sell prices)
+		const newCommunityPrice = (buyPrice + sellPrice) / 2;
+		
+		// Calculate community scenario values
+		// If production <= consumption, all production valued at community price
+		// Any excess production valued at sell price
+		// If consumption <= production, all consumption valued at community price
+		// Any excess consumption valued at buy price
+		let communityGenerationRevenue = 0;
+		let communityCostConsumption = 0;
+		
+		if (totalProduction <= totalConsumption) {
+		  // All generation gets community price
+		  communityGenerationRevenue = totalProduction * newCommunityPrice;
+		  // Part of consumption gets community price, excess gets buy price
+		  communityCostConsumption = -(totalProduction * newCommunityPrice + 
+		                             (totalConsumption - totalProduction) * buyPrice);
+		} else {
+		  // Part of generation gets community price, excess gets sell price
+		  communityGenerationRevenue = totalConsumption * newCommunityPrice + 
+		                              (totalProduction - totalConsumption) * sellPrice;
+		  // All consumption gets community price
+		  communityCostConsumption = -(totalConsumption * newCommunityPrice);
+		}
 
 		// Get the current balance from history to ensure we're building on the correct value
 		const currentBalance = cashBalanceHistory.length > 0 ? 
 		  cashBalanceHistory[cashBalanceHistory.length - 1] : 0;
 		const currentStandaloneBalance = cashAloneHistory.length > 0 ?
 		  cashAloneHistory[cashAloneHistory.length - 1] : 0;
+		const currentGeneration = generationHistory.length > 0 ?
+		  generationHistory[generationHistory.length - 1] : 0;
+		const currentConsumption = consumptionHistory.length > 0 ?
+		  consumptionHistory[consumptionHistory.length - 1] : 0;
+		const currentCommunityGeneration = generationCommunityHistory.length > 0 ?
+		  generationCommunityHistory[generationCommunityHistory.length - 1] : 0;
+		const currentCommunityConsumption = consumptionCommunityHistory.length > 0 ?
+		  consumptionCommunityHistory[consumptionCommunityHistory.length - 1] : 0;
 
-		// Calculate the new balance for this hour
+		// Calculate the new values for this hour
 		const newBalance = currentBalance + financialImpact;
 		const newStandaloneBalance = currentStandaloneBalance + standaloneFinancialImpact;
+		const newGeneration = currentGeneration + standaloneRevenue;
+		const newConsumption = currentConsumption + standaloneCost;
+		const newCommunityGeneration = currentCommunityGeneration + communityGenerationRevenue;
+		const newCommunityConsumption = currentCommunityConsumption + communityCostConsumption;
 
 		// Update money states
 		setMoney(newBalance);
 		setMoneyAlone(newStandaloneBalance);
+		setGenerationStandalone(newGeneration);
+		setConsumptionStandalone(newConsumption);
+		setCommunityPrice(newCommunityPrice);
+		setGenerationCommunity(newCommunityGeneration);
+		setConsumptionCommunity(newCommunityConsumption);
 
 		// Update cash balance histories
 		setCashBalanceHistory(prevHistory => {
@@ -587,6 +650,38 @@ const EnergyGamev2 = () => {
 		setCashAloneHistory(prevHistory => {
 		  const newHistory = [...prevHistory];
 		  newHistory[currentHour] = newStandaloneBalance;
+		  return newHistory;
+		});
+		
+		// Update standalone generation and consumption histories
+		setGenerationHistory(prevHistory => {
+		  const newHistory = [...prevHistory];
+		  newHistory[currentHour] = newGeneration;
+		  return newHistory;
+		});
+		
+		setConsumptionHistory(prevHistory => {
+		  const newHistory = [...prevHistory];
+		  newHistory[currentHour] = newConsumption;
+		  return newHistory;
+		});
+		
+		// Update community price, generation and consumption histories
+		setCommunityPriceHistory(prevHistory => {
+		  const newHistory = [...prevHistory];
+		  newHistory[currentHour] = newCommunityPrice;
+		  return newHistory;
+		});
+		
+		setGenerationCommunityHistory(prevHistory => {
+		  const newHistory = [...prevHistory];
+		  newHistory[currentHour] = newCommunityGeneration;
+		  return newHistory;
+		});
+		
+		setConsumptionCommunityHistory(prevHistory => {
+		  const newHistory = [...prevHistory];
+		  newHistory[currentHour] = newCommunityConsumption;
 		  return newHistory;
 		});
         
@@ -652,99 +747,134 @@ const EnergyGamev2 = () => {
     }, 10); // Render loop runs every 0.01 seconds (100 FPS)
     
     return () => clearInterval(renderLoop);
-  }, [gameRunning, buyPrice, sellPrice, currentHour, cashBalanceHistory,
-    weekData, hourStarted, gameSpeed, showDebug,
-    windFarmCount, solarPanelCount, calculateWindProduction, calculateSolarProduction,
-    calculateHome1Consumption, calculateHome2Consumption, calculateHome3Consumption, 
-    calculateBusinessConsumption]);
+  }, [gameRunning, buyPrice, sellPrice, currentHour, cashBalanceHistory, cashAloneHistory,
+      generationHistory, consumptionHistory, communityPriceHistory,
+      generationCommunityHistory, consumptionCommunityHistory,
+      weekData, hourStarted, gameSpeed, showDebug,
+      windFarmCount, solarPanelCount, calculateWindProduction, calculateSolarProduction,
+      calculateHome1Consumption, calculateHome2Consumption, calculateHome3Consumption, 
+      calculateBusinessConsumption]);
 
   return (
     <div className="w-full h-full p-4 rounded-lg bg-blue-100 text-gray-800">   
-      <div className="flex justify-between items-center mb-6">
-        <div className="w-1/3">
-          <h2 className="text-2xl font-bold">Energy Community Simulator v2</h2> 
-          <span className="text-base font-normal text-gray-600">by Iacopo Savelli (iacopo.savelli@unibocconi.it)</span>
-          <p className="text-lg">Day: {dayCount} | Time: {formatHour(currentHour % 24)} | Weather: {getCurrentWeather()}</p>
+     <div className="flex justify-between items-center mb-6">
+  <div className="w-1/5">
+    <h2 className="text-2xl font-bold">Energy Community Simulator v2</h2> 
+    <span className="text-base font-normal text-gray-600">by Iacopo Savelli (iacopo.savelli@unibocconi.it)</span>
+    <p className="text-lg">Day: {dayCount} | Time: {formatHour(currentHour % 24)} | Weather: {getCurrentWeather()}</p>
+  </div>
+  
+  <div className="w-2/5 text-center">
+    <div className="bg-blue-50 rounded-lg p-4 shadow text-center">
+      <h3 className="text-xl font-bold">Total Community Energy</h3>
+      <div className="flex justify-between items-center mt-2">
+        <div>
+          <p className="text-gray-600 font-bold">Consumption</p>
+          <p className="text-2xl font-bold">{getTotalConsumption().toFixed(1)} kW</p>
         </div>
-        
-        <div className="w-1/3 text-center">
-          <div className="bg-blue-50 rounded-lg p-4 shadow text-center">
-            <h3 className="text-xl font-bold">Total Community Energy</h3>
-            <div className="flex justify-between items-center mt-2">
-              <div>
-                <p className="text-gray-600 font-bold">Consumption</p>
-                <p className="text-2xl font-bold">{getTotalConsumption().toFixed(1)} kW</p>
-              </div>
-              <div>
-                <p className="text-gray-600 font-bold">Generation</p>
-                <p className="text-2xl font-bold">{totalEnergyProduced.toFixed(1)} kW</p>
-              </div>
-              <div>
-                <p className="text-gray-600 font-bold">{getGridInteraction() > 0 ? 'Importing' : 'Exporting'}</p>
-                <p className={`text-2xl font-bold ${getGridInteraction() > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                  {Math.abs(getGridInteraction()).toFixed(1)} kW
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600 font-bold">Community €</p>
-                <p className={`text-2xl font-bold ${money >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{money.toFixed(2)}</p>
-              </div>
-			  <div>
-                <p className="text-gray-600 font-bold">Standalone €</p>
-                <p className={`text-2xl font-bold ${moneyAlone >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{moneyAlone.toFixed(2)}</p>
-              </div>
-            </div>
-          </div>
+        <div>
+          <p className="text-gray-600 font-bold">Generation</p>
+          <p className="text-2xl font-bold">{totalEnergyProduced.toFixed(1)} kW</p>
         </div>
-        
-        <div className="w-1/3 text-right">
-          <div className="flex justify-end items-center mt-2">
-            {/* Speed controls */}
-            <div className="flex items-center mr-4">
-              <span className="mr-2">Speed:</span>
-              <button 
-                onClick={() => setGameSpeed(1)}
-                className={`px-2 py-1 mx-1 rounded ${gameSpeed === 1 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-              >
-                1x
-              </button>
-              <button 
-                onClick={() => setGameSpeed(2)}
-                className={`px-2 py-1 mx-1 rounded ${gameSpeed === 2 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-              >
-                2x
-              </button>
-              <button 
-                onClick={() => setGameSpeed(5)}
-                className={`px-2 py-1 mx-1 rounded ${gameSpeed === 5 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-              >
-                5x
-              </button>
-              <button 
-                onClick={() => setGameSpeed(10)}
-                className={`px-2 py-1 mx-1 rounded ${gameSpeed === 10 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-              >
-                10x
-              </button>
-            </div>
-            
-            {/* Pause and Reset buttons */}
-            <button 
-              onClick={() => setGameRunning(!gameRunning)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-            >
-              {gameRunning ? 'Pause' : 'Start'}
-            </button>
-            
-            <button 
-              onClick={resetGame}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ml-2"
-            > 
-              Reset
-            </button>
-          </div>
+        <div>
+          <p className="text-gray-600 font-bold">{getGridInteraction() > 0 ? 'Importing' : 'Exporting'}</p>
+          <p className={`text-2xl font-bold ${getGridInteraction() > 0 ? 'text-red-500' : 'text-green-500'}`}>
+            {Math.abs(getGridInteraction()).toFixed(1)} kW
+          </p>
+        </div>
+		<div>
+          <p className="text-gray-600 font-bold">Import Price</p>
+          <p className="text-2xl text-red-600 font-bold">€{buyPrice.toFixed(2)}/kWh</p>
         </div>
       </div>
+      <div className="flex justify-between items-center mt-2 border-t pt-2">
+        <div>
+          <p className="text-gray-600 font-bold">Standalone Balance €</p>
+          <p className={`text-2xl font-bold ${moneyAlone >= 0 ? ' text-green-600' : ' text-red-600'}`}>€{moneyAlone.toFixed(2)}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 font-bold">Standalone Gen. Revenue</p>
+          <p className="text-2xl font-bold text-green-600">€{generationStandalone.toFixed(2)}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 font-bold">Standalone Con. Cost</p>
+          <p className="text-2xl font-bold text-red-600">€{consumptionStandalone.toFixed(2)}</p>
+        </div>
+		<div>
+          <p className="text-gray-600 font-bold">Export Price</p>
+          <p className="text-2xl text-green-600 font-bold">€{sellPrice.toFixed(2)}/kWh</p>
+        </div>
+      </div>
+      
+      <div className="flex justify-between items-center mt-2 border-t pt-2">
+        <div>
+          <p className="text-gray-600 font-bold">Community Balance €</p>
+          <p className={`text-2xl font-bold ${money >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{money.toFixed(2)}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 font-bold">Comm. Gen. Revenue</p>
+          <p className="text-2xl font-bold text-green-600">€{generationCommunity.toFixed(2)}</p>
+        </div>
+        <div>
+          <p className="text-gray-600 font-bold">Comm. Con. Cost</p>
+          <p className="text-2xl font-bold text-red-600">€{consumptionCommunity.toFixed(2)}</p>
+        </div>
+		<div>
+          <p className="text-gray-600 font-bold">Comm. Price</p>
+          <p className="text-2xl text-blue-600 font-bold">€{communityPrice.toFixed(2)}/kWh</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div className="w-1/5 text-right">
+    <div className="flex justify-end items-center mt-2">
+      {/* Speed controls */}
+      <div className="flex items-center mr-4">
+        <span className="mr-2">Speed:</span>
+        <button 
+          onClick={() => setGameSpeed(1)}
+          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 1 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+        >
+          1x
+        </button>
+        <button 
+          onClick={() => setGameSpeed(2)}
+          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 2 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+        >
+          2x
+        </button>
+        <button 
+          onClick={() => setGameSpeed(5)}
+          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 5 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+        >
+          5x
+        </button>
+        <button 
+          onClick={() => setGameSpeed(10)}
+          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 10 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+        >
+          10x
+        </button>
+      </div>
+      
+      {/* Pause and Reset buttons */}
+      <button 
+        onClick={() => setGameRunning(!gameRunning)}
+        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+      >
+        {gameRunning ? 'Pause' : 'Start'}
+      </button>
+      
+      <button 
+        onClick={resetGame}
+        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 ml-2"
+      > 
+        Reset
+      </button>
+    </div>
+  </div>
+</div>
 
 
          
@@ -866,7 +996,7 @@ const EnergyGamev2 = () => {
       </div>
     </div>
 
-    {/* Right side - Sun/Moon indicator with Weather overlay */}
+{/* Right side - Sun/Moon indicator with Weather overlay */}
     <div className="w-1/2 flex justify-start pl-4">
       <div className="relative">
         {(currentHour % 24) > 6 && (currentHour % 24) <= 18 ? (
@@ -1271,7 +1401,8 @@ const EnergyGamev2 = () => {
       
       <h3 className="text-lg font-semibold">Local Business</h3>
       <p className="text-sm text-gray-600">Closed weekends</p>
-      <p className="mt-2">Real-time consumption: <span className="font-bold">{businessCount !== 0 ? (getBusinessConsumption() / businessCount).toFixed(1) + " kW" : "not selected"}</span></p>
+      <p className="mt-2">Real-time consumption: <span className="font-bold">{businessCount !==
+0 ? (getBusinessConsumption() / businessCount).toFixed(1) + " kW" : "not selected"}</span></p>
       </div>
     </div>
     </div>
@@ -1457,7 +1588,7 @@ const EnergyGamev2 = () => {
     <button 
       className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
       onClick={() => navigator.clipboard.writeText(
-        "Hour,Day,Time,Wind Speed,Weather,Wind Count,Solar Count,Home1 Count,Home2 Count,Home3 Count,Business Count,Wind Production,Solar Production,Home1 Consumption,Home2 Consumption,Home3 Consumption,Business Consumption,Grid Interaction,Cash Balance,Standalone Cash Balance\n" +
+        "Hour,Day,Time,Wind Speed,Weather,Wind Count,Solar Count,Home1 Count,Home2 Count,Home3 Count,Business Count,Wind Production,Solar Production,Home1 Consumption,Home2 Consumption,Home3 Consumption,Business Consumption,Grid Interaction,Cash Balance,Standalone Cash Balance,Generation Revenue,Consumption Cost,Community Price,Community Generation,Community Consumption\n" +
         Array.from({length: currentHour + 1}, (_, i) => {
           const hour = i;
           const day = Math.floor(hour / 24) + 1;
@@ -1476,7 +1607,12 @@ const EnergyGamev2 = () => {
           // Cash balance from history for this hour
           const historicalCashBalance = cashBalanceHistory[hour] !== undefined ? cashBalanceHistory[hour] : money;
           const historicalStandaloneBalance = cashAloneHistory[hour] !== undefined ? cashAloneHistory[hour] : moneyAlone;
-		  return `${hour},${day},${time}:00,${windSpeed},${weather},${windFarmCount},${solarPanelCount},${home1Count},${home2Count},${home3Count},${businessCount},${windProduction.toFixed(2)},${solarProduction.toFixed(2)},${home1Consumption.toFixed(2)},${home2Consumption.toFixed(2)},${home3Consumption.toFixed(2)},${businessConsumption.toFixed(2)},${gridInteraction.toFixed(2)},${historicalCashBalance.toFixed(2)},${historicalStandaloneBalance.toFixed(2)}`;
+		  const historicalGenerationRevenue = generationHistory[hour] !== undefined ? generationHistory[hour] : generationStandalone;
+          const historicalConsumptionCost = consumptionHistory[hour] !== undefined ? consumptionHistory[hour] : consumptionStandalone;
+          const historicalCommunityPrice = communityPriceHistory[hour] !== undefined ? communityPriceHistory[hour] : communityPrice;
+          const historicalCommunityGeneration = generationCommunityHistory[hour] !== undefined ? generationCommunityHistory[hour] : generationCommunity;
+          const historicalCommunityConsumption = consumptionCommunityHistory[hour] !== undefined ? consumptionCommunityHistory[hour] : consumptionCommunity;
+          return `${hour},${day},${time}:00,${windSpeed},${weather},${windFarmCount},${solarPanelCount},${home1Count},${home2Count},${home3Count},${businessCount},${windProduction.toFixed(2)},${solarProduction.toFixed(2)},${home1Consumption.toFixed(2)},${home2Consumption.toFixed(2)},${home3Consumption.toFixed(2)},${businessConsumption.toFixed(2)},${gridInteraction.toFixed(2)},${historicalStandaloneBalance.toFixed(2)},${historicalGenerationRevenue.toFixed(2)},${historicalConsumptionCost.toFixed(2)},${historicalCommunityPrice.toFixed(2)},${historicalCashBalance.toFixed(2)},${historicalCommunityGeneration.toFixed(2)},${historicalCommunityConsumption.toFixed(2)}`;
         }).join("\n")
       )}
     >
@@ -1506,8 +1642,13 @@ const EnergyGamev2 = () => {
           <th className="p-1 border">Home3 Consumption (kW)</th>
           <th className="p-1 border">Business Consumption (kW)</th>
           <th className="p-1 border">Grid Interaction (kW)</th>
-          <th className="p-1 border">Cash Balance (€)</th>
-		  <th className="p-1 border">Standalone Cash (€)</th>
+		  <th className="p-1 border">Standalone Balance (€)</th>
+		  <th className="p-1 border">Standalone Gen Revenue (€)</th>
+		  <th className="p-1 border">Standalone Con Cost (€)</th>
+		  <th className="p-1 border">Community Price (€)</th>
+		  <th className="p-1 border">Community Balance (€)</th>
+		  <th className="p-1 border">Community Gen Revenue (€)</th>
+		  <th className="p-1 border">Community Con Cost (€)</th>
         </tr>
       </thead>
       <tbody>
@@ -1549,11 +1690,26 @@ const EnergyGamev2 = () => {
               <td className={`p-1 border text-right ${gridInteraction > 0 ? "text-red-600" : "text-green-600"}`}>
                 {gridInteraction > 0 ? `+${gridInteraction.toFixed(2)}` : gridInteraction.toFixed(2)}
               </td>
-              <td className={`p-1 border text-right ${cashBalanceHistory[hour] >= 0 ? "text-green-600" : "text-red-600"}`}>
-                €{cashBalanceHistory[hour]?.toFixed(2) || money.toFixed(2)}
-              </td>
 			  <td className={`p-1 border text-right ${cashAloneHistory[hour] >= 0 ? "text-green-600" : "text-red-600"}`}>
 	 		   €{cashAloneHistory[hour]?.toFixed(2) || moneyAlone.toFixed(2)}
+			  </td>
+			  <td className="p-1 border text-right text-green-600">
+			   +€{generationHistory[hour]?.toFixed(2) || generationStandalone.toFixed(2)}
+			  </td>
+			  <td className="p-1 border text-right text-red-600">
+			   €{consumptionHistory[hour]?.toFixed(2) || consumptionStandalone.toFixed(2)}
+			  </td>
+			  <td className="p-1 border text-right text-blue-600">
+			   €{communityPriceHistory[hour]?.toFixed(2) || communityPrice.toFixed(2)}
+			  </td>
+			  <td className={`p-1 border text-right ${cashBalanceHistory[hour] >= 0 ? "text-green-600" : "text-red-600"}`}>
+                €{cashBalanceHistory[hour]?.toFixed(2) || money.toFixed(2)}
+              </td>
+			  <td className="p-1 border text-right text-green-600">
+			   +€{generationCommunityHistory[hour]?.toFixed(2) || generationCommunity.toFixed(2)}
+			  </td>
+			  <td className="p-1 border text-right text-red-600">
+			   €{consumptionCommunityHistory[hour]?.toFixed(2) || consumptionCommunity.toFixed(2)}
 			  </td>
             </tr>
           );
