@@ -126,7 +126,9 @@ const EnergyGamev2 = () => {
   // Game state
   const [currentHour, setCurrentHour] = useState(0);
   const [money, setMoney] = useState(0); // Start with 0 euros
+  const [moneyAlone, setMoneyAlone] = useState(0); // Money if each consumer/generator acted alone
   const [cashBalanceHistory, setCashBalanceHistory] = useState([0]); // Track cash balance history
+  const [cashAloneHistory, setCashAloneHistory] = useState([0]); // Track cash balance history for standalone scenario
   const [gameRunning, setGameRunning] = useState(false);
   const [dayCount, setDayCount] = useState(1);
   const [buyPrice, setBuyPrice] = useState(0.30); // euros per kWh
@@ -424,6 +426,9 @@ const EnergyGamev2 = () => {
     setHome3Count(0);
     setBusinessCount(0);
 	
+	setMoneyAlone(0);
+    setCashAloneHistory([0]); // Reset standalone cash balance history
+	
 	// Reset prices to initial values
 	setBuyPrice(0.30);  // Reset to default buy price (€0.30/kWh)
 	setSellPrice(0.10); // Reset to default sell price (€0.10/kWh)
@@ -552,22 +557,38 @@ const EnergyGamev2 = () => {
           ? -gridInteraction * buyPrice  // Buying energy (cost)
           : -gridInteraction * sellPrice; // Selling energy (revenue)
         
-        // Get the current balance from history to ensure we're building on the correct value
-        const currentBalance = cashBalanceHistory.length > 0 ? 
-          cashBalanceHistory[cashBalanceHistory.length - 1] : 0;
-        
-        // Calculate the new balance for this hour
-        const newBalance = currentBalance + financialImpact;
-        
-        // Update money state
-        setMoney(newBalance);
-        
-        // Update cash balance history
-        setCashBalanceHistory(prevHistory => {
-          const newHistory = [...prevHistory];
-          newHistory[currentHour] = newBalance;
-          return newHistory;
-        });
+        // Calculate financial impact for standalone scenario (no community benefit)
+		// All consumption is billed at buy price, all generation compensated at sell price
+		const standaloneCost = -totalConsumption * buyPrice; // Cost for all consumption
+		const standaloneRevenue = totalProduction * sellPrice; // Revenue for all generation
+		const standaloneFinancialImpact = standaloneCost + standaloneRevenue;
+
+		// Get the current balance from history to ensure we're building on the correct value
+		const currentBalance = cashBalanceHistory.length > 0 ? 
+		  cashBalanceHistory[cashBalanceHistory.length - 1] : 0;
+		const currentStandaloneBalance = cashAloneHistory.length > 0 ?
+		  cashAloneHistory[cashAloneHistory.length - 1] : 0;
+
+		// Calculate the new balance for this hour
+		const newBalance = currentBalance + financialImpact;
+		const newStandaloneBalance = currentStandaloneBalance + standaloneFinancialImpact;
+
+		// Update money states
+		setMoney(newBalance);
+		setMoneyAlone(newStandaloneBalance);
+
+		// Update cash balance histories
+		setCashBalanceHistory(prevHistory => {
+		  const newHistory = [...prevHistory];
+		  newHistory[currentHour] = newBalance;
+		  return newHistory;
+		});
+
+		setCashAloneHistory(prevHistory => {
+		  const newHistory = [...prevHistory];
+		  newHistory[currentHour] = newStandaloneBalance;
+		  return newHistory;
+		});
         
         // Mark that we've calculated values for this hour
         setHourStarted(true);
@@ -665,11 +686,11 @@ const EnergyGamev2 = () => {
                 </p>
               </div>
               <div>
-                <p className="text-gray-600 font-bold">Cash Balance</p>
+                <p className="text-gray-600 font-bold">Community €</p>
                 <p className={`text-2xl font-bold ${money >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{money.toFixed(2)}</p>
               </div>
 			  <div>
-                <p className="text-gray-600 font-bold">Cash Alone</p>
+                <p className="text-gray-600 font-bold">Standalone €</p>
                 <p className={`text-2xl font-bold ${moneyAlone >= 0 ? 'text-green-600' : 'text-red-600'}`}>€{moneyAlone.toFixed(2)}</p>
               </div>
             </div>
@@ -760,8 +781,8 @@ const EnergyGamev2 = () => {
           </div>
           </div>
           <h3 className="text-xl mt-2">Wind Turbine ({maxWindPower} kW)</h3>
-          <p>Wind Speed: {getCurrentWindSpeed()} m/s</p>
-          <p>Energy: {windEnergyProduced.toFixed(1)} kW</p>
+          <p>Wind Speed: {getCurrentWindSpeed()} m/s</p>	  
+		  <p>Energy: <span className="font-bold">{windFarmCount !== 0 ? (windEnergyProduced/windFarmCount).toFixed(1) + " kW" : "not selected"}</span></p>
         </div>
 
 
@@ -902,8 +923,8 @@ const EnergyGamev2 = () => {
     </div>
     </div>
 
-    <h3 className="text-xl mt-2">Photovoltaic Panel ({maxSolarPower} kW)</h3>
-    <p>Energy: {solarEnergyProduced.toFixed(1)} kW</p>
+    <h3 className="text-xl mt-2">Photovoltaic Panel ({maxSolarPower} kW)</h3>	
+	<p>Energy: <span className="font-bold">{solarPanelCount !== 0 ? (solarEnergyProduced/solarPanelCount).toFixed(1) + " kW" : "not selected"}</span></p>
     <p>
     {(currentHour % 24) >= 6 && (currentHour % 24) <= 18 
       ? getCurrentWeather() === 'clear' 
@@ -1152,13 +1173,10 @@ const EnergyGamev2 = () => {
       
       <h3 className="text-lg font-semibold">Smart-Working Home</h3>
       <p className="text-sm text-gray-600">Work-from-home family</p>
-      <p className="mt-2">Real-time consumption: <span className="font-bold">{getHome1Consumption().toFixed(1)} kW</span></p>
-      <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
-        <div 
-        className="bg-blue-500 h-2 rounded-full" 
-        style={{ width: `${(getHome1Consumption() / 10) * 100}%` }}
-        ></div>
-      </div>
+
+	  
+	  <p className="mt-2">Real-time consumption: <span className="font-bold">{home1Count !== 0 ? (getHome1Consumption() / home1Count).toFixed(1) + " kW" : "not selected"}</span></p>
+	  
       </div>
 
       {/* Home 2 - Office Worker */}
@@ -1186,13 +1204,7 @@ const EnergyGamev2 = () => {
       
       <h3 className="text-lg font-semibold">Standard Home</h3>
       <p className="text-sm text-gray-600">Empty during daytime</p>
-      <p className="mt-2">Real-time consumption: <span className="font-bold">{getHome2Consumption().toFixed(1)} kW</span></p>
-      <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
-        <div 
-        className="bg-amber-500 h-2 rounded-full" 
-        style={{ width: `${(getHome2Consumption() / 10) * 100}%` }}
-        ></div>
-      </div>
+      <p className="mt-2">Real-time consumption: <span className="font-bold">{home2Count !== 0 ? (getHome2Consumption() / home2Count).toFixed(1) + " kW" : "not selected"}</span></p>
       </div>
 
       {/* Home 3 - Family with Children */}
@@ -1220,13 +1232,7 @@ const EnergyGamev2 = () => {
       
       <h3 className="text-lg font-semibold">Large Family</h3>
       <p className="text-sm text-gray-600">High evening usage</p>
-      <p className="mt-2">Real-time consumption: <span className="font-bold">{getHome3Consumption().toFixed(1)} kW</span></p>
-      <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
-        <div 
-        className="bg-green-500 h-2 rounded-full" 
-        style={{ width: `${(getHome3Consumption() / 10) * 100}%` }}
-        ></div>
-      </div>
+      <p className="mt-2">Real-time consumption: <span className="font-bold">{home3Count !== 0 ? (getHome3Consumption() / home3Count).toFixed(1) + " kW" : "not selected"}</span></p>
       </div>
 
       {/* Business Building */}
@@ -1254,13 +1260,7 @@ const EnergyGamev2 = () => {
       
       <h3 className="text-lg font-semibold">Local Business</h3>
       <p className="text-sm text-gray-600">Closed weekends</p>
-      <p className="mt-2">Real-time consumption: <span className="font-bold">{getBusinessConsumption().toFixed(1)} kW</span></p>
-      <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
-        <div 
-        className="bg-purple-500 h-2 rounded-full" 
-        style={{ width: `${(getBusinessConsumption() / 10) * 100}%` }}
-        ></div>
-      </div>
+      <p className="mt-2">Real-time consumption: <span className="font-bold">{businessCount !== 0 ? (getBusinessConsumption() / businessCount).toFixed(1) + " kW" : "not selected"}</span></p>
       </div>
     </div>
     </div>
@@ -1435,7 +1435,7 @@ const EnergyGamev2 = () => {
     <button 
       className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
       onClick={() => navigator.clipboard.writeText(
-        "Hour,Day,Time,Wind Speed,Weather,Wind Count,Solar Count,Home1 Count,Home2 Count,Home3 Count,Business Count,Wind Production,Solar Production,Home1 Consumption,Home2 Consumption,Home3 Consumption,Business Consumption,Grid Interaction,Cash Balance\n" +
+        "Hour,Day,Time,Wind Speed,Weather,Wind Count,Solar Count,Home1 Count,Home2 Count,Home3 Count,Business Count,Wind Production,Solar Production,Home1 Consumption,Home2 Consumption,Home3 Consumption,Business Consumption,Grid Interaction,Cash Balance,Standalone Cash Balance\n" +
         Array.from({length: currentHour + 1}, (_, i) => {
           const hour = i;
           const day = Math.floor(hour / 24) + 1;
@@ -1453,7 +1453,8 @@ const EnergyGamev2 = () => {
           const gridInteraction = totalConsumption - totalProduction;
           // Cash balance from history for this hour
           const historicalCashBalance = cashBalanceHistory[hour] !== undefined ? cashBalanceHistory[hour] : money;
-          return `${hour},${day},${time}:00,${windSpeed},${weather},${windFarmCount},${solarPanelCount},${home1Count},${home2Count},${home3Count},${businessCount},${windProduction.toFixed(2)},${solarProduction.toFixed(2)},${home1Consumption.toFixed(2)},${home2Consumption.toFixed(2)},${home3Consumption.toFixed(2)},${businessConsumption.toFixed(2)},${gridInteraction.toFixed(2)},${historicalCashBalance.toFixed(2)}`;
+          const historicalStandaloneBalance = cashAloneHistory[hour] !== undefined ? cashAloneHistory[hour] : moneyAlone;
+		  return `${hour},${day},${time}:00,${windSpeed},${weather},${windFarmCount},${solarPanelCount},${home1Count},${home2Count},${home3Count},${businessCount},${windProduction.toFixed(2)},${solarProduction.toFixed(2)},${home1Consumption.toFixed(2)},${home2Consumption.toFixed(2)},${home3Consumption.toFixed(2)},${businessConsumption.toFixed(2)},${gridInteraction.toFixed(2)},${historicalCashBalance.toFixed(2)},${historicalStandaloneBalance.toFixed(2)}`;
         }).join("\n")
       )}
     >
@@ -1484,6 +1485,7 @@ const EnergyGamev2 = () => {
           <th className="p-1 border">Business Consumption (kW)</th>
           <th className="p-1 border">Grid Interaction (kW)</th>
           <th className="p-1 border">Cash Balance (€)</th>
+		  <th className="p-1 border">Standalone Cash (€)</th>
         </tr>
       </thead>
       <tbody>
@@ -1528,6 +1530,9 @@ const EnergyGamev2 = () => {
               <td className={`p-1 border text-right ${cashBalanceHistory[hour] >= 0 ? "text-green-600" : "text-red-600"}`}>
                 €{cashBalanceHistory[hour]?.toFixed(2) || money.toFixed(2)}
               </td>
+			  <td className={`p-1 border text-right ${cashAloneHistory[hour] >= 0 ? "text-green-600" : "text-red-600"}`}>
+	 		   €{cashAloneHistory[hour]?.toFixed(2) || moneyAlone.toFixed(2)}
+			  </td>
             </tr>
           );
         })}
