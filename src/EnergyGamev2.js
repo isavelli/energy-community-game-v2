@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import { Wind, Home, Sun, Cloud, Store} from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine  } from 'recharts';
 
 
 const EnergyGamev2 = () => {
@@ -935,6 +935,16 @@ const EnergyGamev2 = () => {
           <Tooltip formatter={(value, name) => {
             return [`${Math.abs(value).toFixed(1)} kW`, value >= 0 ? 'Importing' : 'Exporting'];
           }} />
+          {/* Add a horizontal reference line at y=0 */}
+          <svg>
+            <defs>
+              <linearGradient id="zeroLine" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#888" stopOpacity={0.8}/>
+                <stop offset="100%" stopColor="#888" stopOpacity={0.8}/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <ReferenceLine y={0} stroke="#888" strokeDasharray="3 3" />
           <Line 
             type="monotone" 
             dataKey="netConsumption" 
