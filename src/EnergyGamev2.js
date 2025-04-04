@@ -797,7 +797,7 @@ const getHome3Forecast = useCallback(() => {
           <p className="text-2xl font-bold text-green-600">€{generationStandalone.toFixed(2)}</p>
         </div>
         <div>
-          <p className="text-gray-600 font-bold">Standalone Con. Cost</p>
+          <p className="text-gray-600 font-bold">Standalone Cons. Cost</p>
           <p className="text-2xl font-bold text-red-600">€{consumptionStandalone.toFixed(2)}</p>
         </div>
 		<div>
@@ -816,11 +816,11 @@ const getHome3Forecast = useCallback(() => {
           <p className="text-2xl font-bold text-green-600">€{generationCommunity.toFixed(2)}</p>
         </div>
         <div>
-          <p className="text-gray-600 font-bold">Comm. Con. Cost</p>
+          <p className="text-gray-600 font-bold">Comm. Cons. Cost</p>
           <p className="text-2xl font-bold text-red-600">€{consumptionCommunity.toFixed(2)}</p>
         </div>
 		<div>
-          <p className="text-gray-600 font-bold">Comm. Price</p>
+          <p className="text-gray-600 font-bold">Community Price</p>
           <p className="text-2xl text-blue-600 font-bold">€{communityPrice.toFixed(2)}/kWh</p>
         </div>
       </div>
