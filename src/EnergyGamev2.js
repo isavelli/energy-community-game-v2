@@ -758,26 +758,26 @@ const getHome3Forecast = useCallback(() => {
   return (
     <div className="w-full h-full p-4 rounded-lg bg-blue-100 text-gray-800">   
      <div className="flex justify-between items-center mb-6">
-  <div className="w-1/5">
+  <div className="w-1/4">
     <h2 className="text-2xl font-bold">Energy Community Simulator v2</h2> 
     <span className="text-base font-normal text-gray-600">by Iacopo Savelli (iacopo.savelli@unibocconi.it)</span>
     <p className="text-lg">Day: {dayCount} | Time: {formatHour(currentHour % 24)} | Weather: {getCurrentWeather()}</p>
   </div>
   
-  <div className="w-2/5 text-center">
+  <div className="w-1/2 text-center">
     <div className="bg-blue-50 rounded-lg p-4 shadow text-center">
-      <h3 className="text-xl font-bold">Total Community Energy</h3>
+	{/*<h3 className="text-xl font-bold">Results</h3>*/}
       <div className="flex justify-between items-center mt-2">
         <div>
-          <p className="text-gray-600 font-bold">Consumption</p>
+          <p className="text-gray-600 font-bold">Total Consumption</p>
           <p className="text-2xl font-bold">{getTotalConsumption().toFixed(1)} kW</p>
         </div>
         <div>
-          <p className="text-gray-600 font-bold">Generation</p>
+          <p className="text-gray-600 font-bold">Total Generation</p>
           <p className="text-2xl font-bold">{totalEnergyProduced.toFixed(1)} kW</p>
         </div>
         <div>
-          <p className="text-gray-600 font-bold">{getGridInteraction() > 0 ? 'Importing' : 'Exporting'}</p>
+          <p className="text-gray-600 font-bold">{getGridInteraction() > 0 ? 'Importing from Grid' : 'Exporting to Grid'}</p>
           <p className={`text-2xl font-bold ${getGridInteraction() > 0 ? 'text-red-500' : 'text-green-500'}`}>
             {Math.abs(getGridInteraction()).toFixed(1)} kW
           </p>
@@ -827,38 +827,10 @@ const getHome3Forecast = useCallback(() => {
     </div>
   </div>
   
-  <div className="w-1/5 text-right">
-    <div className="flex justify-end items-center mt-2">
-      {/* Speed controls */}
-      <div className="flex items-center mr-4">
-        <span className="mr-2">Speed:</span>
-        <button 
-          onClick={() => setGameSpeed(1)}
-          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 1 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-        >
-          1x
-        </button>
-        <button 
-          onClick={() => setGameSpeed(2)}
-          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 2 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-        >
-          2x
-        </button>
-        <button 
-          onClick={() => setGameSpeed(5)}
-          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 5 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-        >
-          5x
-        </button>
-        <button 
-          onClick={() => setGameSpeed(10)}
-          className={`px-2 py-1 mx-1 rounded ${gameSpeed === 10 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
-        >
-          10x
-        </button>
-      </div>
-      
-      {/* Pause and Reset buttons */}
+  <div className="w-1/4 text-right">
+  <div className="flex flex-col items-end">
+    {/* Pause and Reset buttons */}
+    <div className="flex justify-end mb-2">
       <button 
         onClick={() => setGameRunning(!gameRunning)}
         className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
@@ -873,7 +845,37 @@ const getHome3Forecast = useCallback(() => {
         Reset
       </button>
     </div>
+    
+    {/* Speed controls */}
+    <div className="flex items-center">
+      <span className="mr-2">Speed:</span>
+      <button 
+        onClick={() => setGameSpeed(1)}
+        className={`px-2 py-1 mx-1 rounded ${gameSpeed === 1 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+      >
+        1x
+      </button>
+      <button 
+        onClick={() => setGameSpeed(2)}
+        className={`px-2 py-1 mx-1 rounded ${gameSpeed === 2 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+      >
+        2x
+      </button>
+      <button 
+        onClick={() => setGameSpeed(5)}
+        className={`px-2 py-1 mx-1 rounded ${gameSpeed === 5 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+      >
+        5x
+      </button>
+      <button 
+        onClick={() => setGameSpeed(10)}
+        className={`px-2 py-1 mx-1 rounded ${gameSpeed === 10 ? 'bg-green-500 text-white' : 'bg-gray-300'}`}
+      >
+        10x
+      </button>
+    </div>
   </div>
+</div>
 </div>
 
 
@@ -888,7 +890,7 @@ const getHome3Forecast = useCallback(() => {
 		
 		<div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-blue-300 mb-4">
         {/* Wind Farm Section */}
-        <div className="text-center">
+        <div className="text-center w-full">
           {/* Wind Production Forecast Chart */}
           <div className="h-32 w-full mb-2">
           <ResponsiveContainer width="100%" height="100%">
@@ -926,7 +928,7 @@ const getHome3Forecast = useCallback(() => {
 
     {/* Solar Panel Section */}
 	<div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 shadow-md border-2 border-yellow-300">
-    <div className="text-center">
+    <div className="text-center w-full">
     {/* Solar Production Forecast Chart */}
     <div className="h-32 w-full mb-2">
     <ResponsiveContainer width="100%" height="100%">
