@@ -3,4 +3,4 @@
 How to Install:
 See install.txt
 
-![Screenshot](./screenshot.png "Screenshot")
+
