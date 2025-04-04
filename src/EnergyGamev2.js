@@ -1590,7 +1590,7 @@ const getHome3Forecast = useCallback(() => {
     <button 
       className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
       onClick={() => navigator.clipboard.writeText(
-        "Hour,Day,Time,Wind Speed,Weather,Wind Count,Solar Count,Home1 Count,Home2 Count,Home3 Count,Business Count,Wind Production,Solar Production,Home1 Consumption,Home2 Consumption,Home3 Consumption,Business Consumption,Grid Interaction,Cash Balance,Standalone Cash Balance,Generation Revenue,Consumption Cost,Community Price,Community Generation,Community Consumption\n" +
+        "Hour,Day,Time,Wind Speed,Weather,Wind Count,Solar Count,Home1 Count,Home2 Count,Home3 Count,Business Count,Wind Production (kW),Solar Production (kW),Home1 Consumption (kW),Home2 Consumption (kW),Home3 Consumption (kW),Business Consumption (kW),Grid Interaction (kW),Standalone Balance Cumulative (€),Standalone Generation Revenue Cumulative (€),Standalone Consumption Cost Cumulative (€),Community Price (€/kWh),Community Balance Cumulative (€),Community Generation Revenue Cumulative(€),Community Consumption Cost Cumulative(€)\n" +
         Array.from({length: currentHour + 1}, (_, i) => {
           const hour = i;
           const day = Math.floor(hour / 24) + 1;
@@ -1644,13 +1644,13 @@ const getHome3Forecast = useCallback(() => {
           <th className="p-1 border">Home3 Consumption (kW)</th>
           <th className="p-1 border">Business Consumption (kW)</th>
           <th className="p-1 border">Grid Interaction (kW)</th>
-		  <th className="p-1 border">Standalone Balance (€)</th>
-		  <th className="p-1 border">Standalone Gen Revenue (€)</th>
-		  <th className="p-1 border">Standalone Con Cost (€)</th>
-		  <th className="p-1 border">Community Price (€)</th>
-		  <th className="p-1 border">Community Balance (€)</th>
-		  <th className="p-1 border">Community Gen Revenue (€)</th>
-		  <th className="p-1 border">Community Con Cost (€)</th>
+		  <th className="p-1 border">Standalone Balance Cumulative (€)</th>
+		  <th className="p-1 border">Standalone Gen Revenue Cumulative (€)</th>
+		  <th className="p-1 border">Standalone Con Cost Cumulative (€)</th>
+		  <th className="p-1 border">Community Price (€/kWh)</th>
+		  <th className="p-1 border">Community Balance Cumulative (€)</th>
+		  <th className="p-1 border">Community Gen Revenue Cumulative (€)</th>
+		  <th className="p-1 border">Community Con Cost Cumulative (€)</th>
         </tr>
       </thead>
       <tbody>
